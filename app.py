@@ -1,4 +1,3 @@
-import streamlit as px
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -24,7 +23,7 @@ except Exception as e:
 # 챗봇의 페르소나(System Instruction) 설정
 SYSTEM_INSTRUCTION = """
 너는 친절하고 공감 능력이 뛰어나면서도, 필요할 땐 뼈 때리는 조언을 해주는 전문 연애 상담사야.
-사용자의 연애 고민(짝사랑, 이별, 썸, 권태기 등)을 듣고 가뜻한 위로와 현실적인 해결책을 제시해줘.
+사용자의 연애 고민(짝사랑, 이별, 썸, 권태기 등)을 듣고 따뜻한 위로와 현실적인 해결책을 제시해줘.
 말투는 다정하고 친근한 반말(또는 존댓말을 적절히 섞어서)로 친구처럼 대해줘. 이모지도 적극적으로 사용해줘.
 """
 
@@ -44,7 +43,7 @@ if user_input := st.chat_input("고민을 이야기해주세요..."):
     # 사용자 메시지 추가 및 화면 표시
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
-        st.write(user_input})
+        st.write(user_input)
 
     # 챗봇 답변 생성 및 화면 표시
     with st.chat_message("assistant"):
@@ -53,12 +52,11 @@ if user_input := st.chat_input("고민을 이야기해주세요..."):
         # API 호출 및 예외 처리
         try:
             with st.spinner("생각 중... 💬"):
-                # 이전 대화 맥락을 포함하여 API가 인식할 수 있는 형태로 변환
-                # (시스템 지침을 설정하기 위해 GenerateContentConfig 사용)
+                # 대화 맥락 생성
                 contents = []
-                for msg in st.session_state.messages[:-1]: # 현재 입력 제외한 이전 기록
+                for msg in st.session_state.messages[:-1]:  # 현재 입력 제외한 이전 기록
                     contents.append(f"{msg['role']}: {msg['content']}")
-                contents.append(f"user: {user_input}") # 현재 입력 추가
+                contents.append(f"user: {user_input}")  # 현재 입력 추가
                 
                 # gemini-2.5-flash-lite 모델 호출
                 response = client.models.generate_content(
@@ -78,8 +76,9 @@ if user_input := st.chat_input("고민을 이야기해주세요..."):
 
         except APIError as ae:
             st.error(f"❌ Gemini API 오류가 발생했습니다: {ae.message}")
-            # 문제가 생긴 마지막 사용자 메시지 제거 (기록 꼬임 방지)
-            st.session_state.messages.pop()
+            if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+                st.session_state.messages.pop()
         except Exception as e:
             st.error(f"❌ 예상치 못한 오류가 발생했습니다: {e}")
-            st.session_state.messages.pop()
+            if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+                st.session_state.messages.pop()
